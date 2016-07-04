@@ -15,7 +15,8 @@ import (
 	"strings"
 	//	"time"
 	"encoding/json"
-	"vectors/utils"
+	"webgo/logger"
+	"webgo/utils"
 
 	core "github.com/go-xorm/core"
 	orm "github.com/go-xorm/xorm"
@@ -92,7 +93,7 @@ func NewOrm(db, host string) (res *TOrm, err error) {
 	//数据库链接
 	res.Engine, err = orm.NewEngine(DbType, lCnnstr)
 	res.Engine.TagIdentifier = "field"
-	if !utils.LogErr(err) {
+	if !logger.LogErr(err) {
 		//控制台打印SQL语句
 		res.Engine.ShowSQL(TestShowSql)
 
@@ -234,12 +235,12 @@ func (self *TOrm) tag_related(tbl *TTable, fld *TField) {
 
 			if table, has := self.TableByName(fld.relmodel_name); !has {
 				self.SyncModel(reflect.Zero(table._cls_type).Interface())
-				utils.Dbg("tag_related", lFieldType)
+				logger.Dbg("tag_related", lFieldType)
 			}
 			// 添加Extend字段
 			lFieldTable := self.Tables[lFieldType]
 			if lFieldTable == nil {
-				utils.Logger.Error("extends failed!")
+				logger.Logger.Error("extends failed!")
 			}
 			for _, fld := range lFieldTable.Fields {
 				//d待续
@@ -250,11 +251,11 @@ func (self *TOrm) tag_related(tbl *TTable, fld *TField) {
 					//lNewFld.cokey_field_name=
 					//lNewFld.relkey_field_name=
 					lTable.Fields[fld.Name] = fld
-					utils.Dbg("5999fld", fld.Name)
+					logger.Dbg("5999fld", fld.Name)
 
 					if fld.primary_key && fld.auto_increment {
 						lTable.RecordField = fld
-						utils.Dbg("RecordField", fld.Name)
+						logger.Dbg("RecordField", fld.Name)
 					}
 
 					// 记录继承字段
@@ -277,7 +278,7 @@ func (self *TOrm) tag_one2many(fld *TField, arg ...string) { //comodel_name stri
 		fld._type = "one2many" //TODO 剔除掉
 		fld.Type = "one2many"
 	} else {
-		utils.Panic("One2Many field " + fld.Name + "'s Args can no be blank!")
+		logger.Panic("One2Many field " + fld.Name + "'s Args can no be blank!")
 	}
 }
 
@@ -290,7 +291,7 @@ func (self *TOrm) tag_many2one(fld *TField, arg ...string) { //comodel_name stri
 		fld._type = "many2one" //TODO 剔除掉
 		fld.Type = "many2one"
 	} else {
-		utils.Panic("Many2One field ", fld.Name, "'s Args can no be blank!")
+		logger.Panic("Many2One field ", fld.Name, "'s Args can no be blank!")
 	}
 
 }
@@ -307,7 +308,7 @@ func (self *TOrm) tag_many2many(fld *TField, arg ...string) { //comodel_name, re
 		fld._type = "many2many" //TODO 剔除掉
 		fld.Type = "many2many"
 	} else {
-		utils.Panic("Many2Many field ", fld.Name, "'s Args can no be blank!")
+		logger.Panic("Many2Many field ", fld.Name, "'s Args can no be blank!")
 	}
 
 }
@@ -325,12 +326,12 @@ func (self *TOrm) tag_selection(modelType reflect.Value, fld *TField, arg ...str
 			}
 		} else {
 			err := json.Unmarshal([]byte(lStr), &fld.Selection)
-			utils.LogErr(err)
+			logger.LogErr(err)
 		}
 		fld._type = "selection" //TODO 剔除掉
 		fld.Type = "selection"
 	} else {
-		utils.Panic("selection field ", fld.Name, "'s Args can no be blank!")
+		logger.Panic("selection field ", fld.Name, "'s Args can no be blank!")
 	}
 }
 
@@ -372,7 +373,7 @@ func (self *TOrm) mapType(model interface{}, t *core.Table) (lTable *TTable, lOr
 	//Fix:取出所有Col并重新修改Name再临时保存到Map中。重新创建一个core.Table用于重组并作为函数的结果返回
 	lColMap := make(map[string]*core.Column)
 	for _, lCol = range t.Columns() {
-		//utils.Dbg("t:", lCol.Name, lCol.FieldName, utils.SnakeCasedName(lCol.FieldName))
+		//logger.Dbg("t:", lCol.Name, lCol.FieldName, utils.SnakeCasedName(lCol.FieldName))
 		lCol.Name = utils.SnakeCasedName(lCol.FieldName)
 		lColMap[utils.SnakeCasedName(lCol.FieldName)] = lCol
 	}
@@ -386,7 +387,7 @@ func (self *TOrm) mapType(model interface{}, t *core.Table) (lTable *TTable, lOr
 		lFieldTag := lType.Field(i).Tag
 
 		// 忽略无Tag的匿名继承结构
-		//utils.Dbg(lType.Field(i).Name, lFieldType.Name(), lTag)
+		//logger.Dbg(lType.Field(i).Name, lFieldType.Name(), lTag)
 		if lType.Field(i).Name == lType.Field(i).Type.Name() && lFieldTag == "" {
 			continue
 		}
@@ -415,7 +416,7 @@ func (self *TOrm) mapType(model interface{}, t *core.Table) (lTable *TTable, lOr
 		lField._symbol_f = _FieldFormat //
 
 		if lCol != nil {
-			//utils.Dbg("lCol != nil", lCol.SQLType.Name, FieldTypes[lCol.SQLType.Name])
+			//logger.Dbg("lCol != nil", lCol.SQLType.Name, FieldTypes[lCol.SQLType.Name])
 			lField._type = FieldTypes[lCol.SQLType.Name]
 			lField.Type = FieldTypes[lCol.SQLType.Name]
 
@@ -428,10 +429,10 @@ func (self *TOrm) mapType(model interface{}, t *core.Table) (lTable *TTable, lOr
 
 		//lField.String = lTag.Get("string")
 		//lField.Help = lTag.Get("help")
-		//utils.Dbg("mapType", lFieldName, lTag, lTag.Get("string"), lTag.Get("help"))
+		//logger.Dbg("mapType", lFieldName, lTag, lTag.Get("string"), lTag.Get("help"))
 
 		// 解析并变更默认值
-		//utils.Dbg("ccc", lFieldName, lCol, lFieldTag)
+		//logger.Dbg("ccc", lFieldName, lCol, lFieldTag)
 		var (
 			lTag    []string
 			lStr    string
@@ -451,14 +452,14 @@ func (self *TOrm) mapType(model interface{}, t *core.Table) (lTable *TTable, lOr
 				if strings.Index(lStr, " ") != -1 {
 					if !strings.HasPrefix(lStr, "'") &&
 						!strings.HasSuffix(lStr, "'") {
-						utils.Logger.Error("Model %s's %s tags could no including space ' ' in brackets value whicth it not 'String' type.", t.Name, strings.ToUpper(lFieldName))
+						logger.Logger.Error("Model %s's %s tags could no including space ' ' in brackets value whicth it not 'String' type.", t.Name, strings.ToUpper(lFieldName))
 						panic("")
 					}
 				}
 			}
 			lIgonre = false
 			//<<<<<<<<<<<
-			//utils.Dbg("tag:", key, lTag)
+			//logger.Dbg("tag:", key, lTag)
 			// 原始ORM映射,理论上无需再次解析只需修改Tag和扩展后的一致即可
 			switch strings.ToLower(lTag[0]) {
 			case "-": // 忽略某些继承者成员
@@ -473,7 +474,7 @@ func (self *TOrm) mapType(model interface{}, t *core.Table) (lTable *TTable, lOr
 					if len(lTag) > 1 {
 						lRelFldName := utils.SnakeCasedName(lTag[1])
 						lRelateFields = append(lRelateFields, lRelFldName)
-						utils.Dbg("relate to:", utils.DotCasedName(lMemberName), lRelFldName)
+						logger.Dbg("relate to:", utils.DotCasedName(lMemberName), lRelFldName)
 						// 现在成员名是关联的Model名,Tag 为关联的字段
 						lTable.Relations[utils.DotCasedName(lMemberName)] = lRelFldName
 					}
@@ -483,7 +484,7 @@ func (self *TOrm) mapType(model interface{}, t *core.Table) (lTable *TTable, lOr
 
 				switch lFieldValue.Kind() {
 				case reflect.Ptr:
-					utils.Logger.Error("field:%s as pointer is not supported!", lFieldName)
+					logger.Logger.Error("field:%s as pointer is not supported!", lFieldName)
 					break
 				case reflect.Struct:
 					var (
@@ -493,14 +494,14 @@ func (self *TOrm) mapType(model interface{}, t *core.Table) (lTable *TTable, lOr
 
 					parentTable = self.TableInfo(lFieldValue.Interface())
 					newParentTable, parentTable = self.mapType(lFieldValue.Interface(), parentTable)
-					//utils.Dbg("parent", parentTable, parentTable.Name, lFieldValue.Interface())
+					//logger.Dbg("parent", parentTable, parentTable.Name, lFieldValue.Interface())
 					//var lNewFld *TField
 					for _, fld := range newParentTable.Fields {
 						//d待续
 						if _, has := lTable.Fields[fld.Name]; !has {
 							//lNewFld = new(TField)
 							lNewFld := *fld //复制关联字段
-							utils.Dbg("FFF", newParentTable.Name, fld, fld.Name, lNewFld)
+							logger.Dbg("FFF", newParentTable.Name, fld, fld.Name, lNewFld)
 
 							if is_relate {
 								lNewFld.foreign_field = true
@@ -510,13 +511,13 @@ func (self *TOrm) mapType(model interface{}, t *core.Table) (lTable *TTable, lOr
 							//lNewFld._inherit = true
 							//lNewFld.cokey_field_name=
 							//lNewFld.relkey_field_name=
-							//utils.Dbg("5999fld", fld.Name)
+							//logger.Dbg("5999fld", fld.Name)
 
 							//# 以下因为使用postgres 的继承方法时Model部分字段是由Parent继承来的
 							//# 映射时是没有Parent的字段如Id 所以在此获取Id主键.
 							if lNewFld.primary_key && lNewFld.auto_increment {
 								lTable.RecordField = &lNewFld
-								utils.Dbg("RecordField", fld.Name)
+								logger.Dbg("RecordField", fld.Name)
 							}
 
 							if _, has := lTable.Fields[fld.Name]; !has {
@@ -533,12 +534,12 @@ func (self *TOrm) mapType(model interface{}, t *core.Table) (lTable *TTable, lOr
 				// 遍历获得原始字段 例如：Extends其他表的字段
 				if _, has := self.Engine.Tables[lFieldType]; !has {
 					self.SyncModel(reflect.Zero(lFieldType).Interface())
-					//utils.Dbg("222 SyncModel", lFieldType)
+					//logger.Dbg("222 SyncModel", lFieldType)
 				}
 				// 添加Extend字段
 				lFieldTable := self.Tables[lFieldType]
 				if lFieldTable == nil {
-					utils.Logger.Error("extends failed!")
+					logger.Logger.Error("extends failed!")
 				}
 
 				for _, fld := range lFieldTable.Fields {
@@ -549,11 +550,11 @@ func (self *TOrm) mapType(model interface{}, t *core.Table) (lTable *TTable, lOr
 						//lNewFld.cokey_field_name=
 						//lNewFld.relkey_field_name=
 						lTable.Fields[fld.Name] = fld
-						//utils.Dbg("5999fld", fld.Name)
+						//logger.Dbg("5999fld", fld.Name)
 
 						if fld.primary_key && fld.auto_increment {
 							lTable.RecordField = fld
-							//utils.Dbg("RecordField", fld.Name)
+							//logger.Dbg("RecordField", fld.Name)
 						}
 
 						// 记录继承字段
@@ -565,18 +566,18 @@ func (self *TOrm) mapType(model interface{}, t *core.Table) (lTable *TTable, lOr
 					//添加原始库到
 					lOrgFieldTable := self.Engine.Tables[lFieldType]
 					if lOrgFieldTable == nil {
-						utils.Logger.Error("extends failed!")
+						logger.Logger.Error("extends failed!")
 					}
 					for _, col := range lOrgFieldTable.Columns() {
 						if c := lOrgTable.GetColumn(col.Name); c == nil {
 							lOrgTable.AddColumn(col)
-							utils.Dbg("5999AddColumn", col.Name)
+							logger.Dbg("5999AddColumn", col.Name)
 						}
 
 						// 为新表添加Key字段
 						//if col.IsAutoIncrement && col.IsPrimaryKey {
 						//	lTable.RecordField = lField
-						//	utils.Dbg("5999RecordField", lField.Name)
+						//	logger.Dbg("5999RecordField", lField.Name)
 						//}
 					}*/
 				fallthrough // 继续其他Case
@@ -592,7 +593,7 @@ func (self *TOrm) mapType(model interface{}, t *core.Table) (lTable *TTable, lOr
 				break
 			case "_relate": // 关联某表
 				if len(lTag) > 1 {
-					utils.Dbg("relate to:", utils.DotCasedName(lMemberName), utils.SnakeCasedName(lTag[1]))
+					logger.Dbg("relate to:", utils.DotCasedName(lMemberName), utils.SnakeCasedName(lTag[1]))
 					// 现在成员名是关联的Model名,Tag 为关联的字段
 					lTable.Relations[utils.DotCasedName(lMemberName)] = utils.SnakeCasedName(lTag[1])
 				}
@@ -600,7 +601,7 @@ func (self *TOrm) mapType(model interface{}, t *core.Table) (lTable *TTable, lOr
 				//  更新关联字段名称
 				lField.related = true
 				if len(lTag) > 1 {
-					utils.Dbg("Relations:", lTag[1])
+					logger.Dbg("Relations:", lTag[1])
 					//lField._inherit = utils.StrToBool(lTag[1])
 					//lField.related = utils.StrToBool(lTag[1]) // 表面关联的
 					lTable.Relations[lTag[1]] = lField.Name
@@ -614,7 +615,7 @@ func (self *TOrm) mapType(model interface{}, t *core.Table) (lTable *TTable, lOr
 				lField.auto_increment = true
 			case "default":
 				if len(lTag) > 1 {
-					utils.Dbg("default:", lTag[1])
+					logger.Dbg("default:", lTag[1])
 					lCol.Default = lTag[1]
 				}
 			case "created":
@@ -734,7 +735,7 @@ func (self *TOrm) mapType(model interface{}, t *core.Table) (lTable *TTable, lOr
 				if len(lTag) > 1 {
 					lField.Help = strings.Trim(lTag[1], "'")
 					lField.String = strings.Replace(lField.String, "''", "'", -1)
-					//utils.Dbg(lField.Help)
+					//logger.Dbg(lField.Help)
 				}
 			case "required": // required(true)
 				lField.Required = true
@@ -775,7 +776,7 @@ func (self *TOrm) mapType(model interface{}, t *core.Table) (lTable *TTable, lOr
 			case "groups": // groups='base.group_user' CSV list of ext IDs of groups
 			case "deprecated": // # Optional deprecation warning
 			default:
-				utils.Dbg("unknown tag ", key)
+				logger.Dbg("unknown tag ", key)
 			}
 		}
 
@@ -804,7 +805,7 @@ func (self *TOrm) mapType(model interface{}, t *core.Table) (lTable *TTable, lOr
 		}
 
 		// 添加字段进Table
-		utils.Dbg(lField._type, lField.Name)
+		logger.Dbg(lField._type, lField.Name)
 		if lField._type != "" && lField.Name != "" {
 			lTable.Fields[lFieldName] = lField // !!!替代方式
 		}
@@ -837,7 +838,7 @@ func (self *TOrm) mapType(model interface{}, t *core.Table) (lTable *TTable, lOr
 	//utils.Logger.DebugLn("SyncModels Fields ", table.Fields)
 	//self.Tables[lType] = lTable
 	//self.nameIndex[t.Name] = lTable //添加表名称索引
-	utils.Dbg("maptype", lTable, lOrgTable, t.Name)
+	logger.Dbg("maptype", lTable, lOrgTable, t.Name)
 	//self.Engine.Tables[lType] = lOrgTable // 更新原始ORM Table
 	return
 }
@@ -860,7 +861,7 @@ func (self *TOrm) SyncModel(model interface{}) (table *TTable, err error) {
 	lType := lValue.Type()
 	lTable := self.TableInfo(model)
 	lTables, err := self.DBMetas() //获取原始ORM所有表
-	if utils.LogErr(err) {
+	if logger.LogErr(err) {
 		return nil, err
 	}
 
@@ -874,14 +875,14 @@ func (self *TOrm) SyncModel(model interface{}) (table *TTable, err error) {
 	}
 
 	// 重新Mapping新规则
-	//utils.Dbg("SyncModel1", len(lTables), lOrgTable, lTable.Name)
+	//logger.Dbg("SyncModel1", len(lTables), lOrgTable, lTable.Name)
 	var NewTable *TTable
 	NewTable, lTable = self.mapType(model, lTable) // 更新自定义后的Table
 	// 保存会列表
 	self.Tables[lType] = NewTable
 	self.nameIndex[NewTable.Name] = NewTable //添加表名称索引
 	self.Engine.Tables[lType] = lTable       // 更新原始ORM Table
-	//utils.Dbg("maptype", lTable, lOrgTable, t.Name)
+	//logger.Dbg("maptype", lTable, lOrgTable, t.Name)
 
 	// 如果不存在 创建新的
 	if lOrgTable == nil {
@@ -892,7 +893,7 @@ func (self *TOrm) SyncModel(model interface{}) (table *TTable, err error) {
 		)
 
 		//bean := self.mapType(model, lTable) //self.mapType(lValue, lTable)
-		//utils.Dbg("SyncModel2", bean)
+		//logger.Dbg("SyncModel2", bean)
 		err = self.StoreEngine(sess.Statement.StoreEngine).CreateTable(lTable)
 		if err != nil {
 			return nil, err
@@ -922,7 +923,7 @@ func (self *TOrm) SyncModel(model interface{}) (table *TTable, err error) {
 				}
 			}
 
-			//utils.Dbg("SyncModel1 OrgCol", OrgCol, col.Name)
+			//logger.Dbg("SyncModel1 OrgCol", OrgCol, col.Name)
 
 			if OrgCol != nil {
 				expectedType := self.Dialect().SqlType(col)
@@ -989,7 +990,7 @@ func (self *TOrm) SyncModel(model interface{}) (table *TTable, err error) {
 				if index.Equal(index2) {
 					oriIndex = index2
 					foundIndexNames[name2] = true
-					utils.Dbg("rrrrrr", name, index, oriIndex.Type, index.Type)
+					logger.Dbg("rrrrrr", name, index, oriIndex.Type, index.Type)
 					break
 				}
 			}
@@ -1000,7 +1001,7 @@ func (self *TOrm) SyncModel(model interface{}) (table *TTable, err error) {
 					_, err = self.Exec(sql)
 					if err != nil {
 						//return nil, err
-						utils.Logger.Error("func SyncModel error#%s:%s", sql, err.Error())
+						logger.Logger.Error("func SyncModel error#%s:%s", sql, err.Error())
 					}
 					oriIndex = nil
 				}
@@ -1016,7 +1017,7 @@ func (self *TOrm) SyncModel(model interface{}) (table *TTable, err error) {
 				sql := self.Dialect().DropIndexSql(lTable.Name, index2)
 				_, err = self.Exec(sql)
 				if err != nil {
-					utils.Logger.Error("func SyncModel error#%s:%s", sql, err.Error())
+					logger.Logger.Error("func SyncModel error#%s:%s", sql, err.Error())
 					//return nil, err
 				}
 			}
@@ -1103,14 +1104,14 @@ func (self *TOrm) SyncModel(model interface{}) (table *TTable, err error) {
 		//self.mapType(lValue)
 	*/
 	table = self.Tables[lTable.Type]
-	utils.Dbg("sycnmodel:", table, lTable.Type)
+	logger.Dbg("sycnmodel:", table, lTable.Type)
 	return table, nil
 }
 
 // 执行SQL 并返回主键ID
 func (self *TOrm) __SqlInsert(sql string, params ...interface{}) (int64, error) {
 	lRes, err := self.Engine.Exec(sql, params...)
-	utils.LogErr(err)
+	logger.LogErr(err)
 
 	return lRes.LastInsertId()
 }
@@ -1130,12 +1131,12 @@ func (self *TOrm) SqlQuery(sql string, params ...string) (ds *TDataSet, err erro
 	sql = fmt.Sprintf(sql, t...)
 
 	if TestShowSql {
-		utils.Logger.InfoLn("SqlExec:", sql, params)
+		logger.Logger.InfoLn("SqlExec:", sql, params)
 	}
 
 	//lRows, err := self.Engine.DB().Query(sql, t...)
 	lRows, err := self.Engine.DB().Query(sql)
-	if utils.LogErr(err) {
+	if logger.LogErr(err) {
 		return // nil, err
 	}
 
@@ -1143,7 +1144,7 @@ func (self *TOrm) SqlQuery(sql string, params ...string) (ds *TDataSet, err erro
 	for lRows.Next() {
 		tempMap := make(map[string]interface{})
 		err = lRows.ScanMap(&tempMap)
-		if !utils.LogErr(err) {
+		if !logger.LogErr(err) {
 			//res = append(res, tempMap)
 			ds.NewRecord(tempMap)
 		}
@@ -1153,7 +1154,7 @@ func (self *TOrm) SqlQuery(sql string, params ...string) (ds *TDataSet, err erro
 
 	// 打印错误
 	err = lRows.Err()
-	utils.LogErr(err)
+	logger.LogErr(err)
 
 	return ds, err
 }
@@ -1163,11 +1164,11 @@ func (self *TOrm) SqlExec(sql string, params ...interface{}) (sql.Result, error)
 	// 组成SQL
 	//sql = fmt.Sprintf(sql, params...)
 	if TestShowSql {
-		utils.Logger.InfoLn("SqlExec:", sql, params)
+		logger.Logger.InfoLn("SqlExec:", sql, params)
 	}
 
 	//	lRes, err := self.Engine.Exec(sql, params...)
-	//	if utils.LogErr(err) {
+	//	if logger.LogErr(err) {
 	//		return 0, err
 	//	}
 
@@ -1177,10 +1178,10 @@ func (self *TOrm) SqlExec(sql string, params ...interface{}) (sql.Result, error)
 	if self.DriverName() == "postgres" && strings.Count(strings.ToLower(sql), "returning") == 1 {
 		res, err := self.Engine.Query(sql, params...)
 		//utils.Logger.DebugLn("exexex", res, err)
-		if !utils.LogErr(err) && len(res) > 0 {
+		if !logger.LogErr(err) && len(res) > 0 {
 			for key, val := range res[0] {
 				id, err := strconv.ParseInt(string(val), 10, 64)
-				if !utils.LogErr(err, key) {
+				if !logger.LogErr(err, key) {
 					return TExecResult(id), err
 				}
 			}
@@ -1457,12 +1458,12 @@ func (self *TOrmSession) Query(sql string, params ...string) (ds *TDataSet, err 
 
 	// 填充
 	sql = fmt.Sprintf(sql, t...)
-	utils.Logger.DebugLn("SqlQuery:", sql, params)
+	logger.Dbg("SqlQuery:", sql, params)
 
 	//lRows, err := self.Engine.DB().Query(sql, t...)
 	lRows, err := self.Engine.DB().Query(sql)
 
-	if utils.LogErr(err) {
+	if logger.LogErr(err) {
 		return nil, err
 	}
 
@@ -1473,7 +1474,7 @@ func (self *TOrmSession) Query(sql string, params ...string) (ds *TDataSet, err 
 	for lRows.Next() {
 		tempMap := make(map[string]interface{})
 		err = lRows.ScanMap(&tempMap)
-		if !utils.LogErr(err) {
+		if !logger.LogErr(err) {
 			//res = append(res, tempMap)
 			ds.NewRecord(tempMap)
 		}
@@ -1483,7 +1484,7 @@ func (self *TOrmSession) Query(sql string, params ...string) (ds *TDataSet, err 
 
 	// 打印错误
 	err = lRows.Err()
-	utils.LogErr(err)
+	logger.LogErr(err)
 
 	return ds, err
 }
@@ -1495,7 +1496,7 @@ func (self *TOrmSession) Exec(sql string, params ...interface{}) (sql.Result, er
 	//utils.Logger.DebugLn("SqlExec:", sql, params)
 
 	//	lRes, err := self.Engine.Exec(sql, params...)
-	//	if utils.LogErr(err) {
+	//	if logger.LogErr(err) {
 	//		return 0, err
 	//	}
 	//lTableNaame := self.Statement.TableName()
@@ -1505,15 +1506,15 @@ func (self *TOrmSession) Exec(sql string, params ...interface{}) (sql.Result, er
 	//fmt.Println("_Validate", lTableNaame, lTable)
 
 	// 过滤Pg 的插入语句
-	utils.Logger.DebugLn("exexex", self.Orm.DriverName(), strings.Count(strings.ToLower(sql), "returning") == 1, sql)
+	logger.Dbg("exexex", self.Orm.DriverName(), strings.Count(strings.ToLower(sql), "returning") == 1, sql)
 	if self.Orm.DriverName() == "postgres" && strings.Count(strings.ToLower(sql), "returning") == 1 {
 
 		res, err := self.Engine.Query(sql, params...)
 		//utils.Logger.DebugLn("exexex", res, err)
-		if !utils.LogErr(err) && len(res) > 0 {
+		if !logger.LogErr(err) && len(res) > 0 {
 			for key, val := range res[0] {
 				id, err := strconv.ParseInt(string(val), 10, 64)
-				if !utils.LogErr(err, key) {
+				if !logger.LogErr(err, key) {
 					return TExecResult(id), err
 				}
 			}
@@ -1669,7 +1670,7 @@ func (self *TOrmSession) createOneTable() error {
 			sqlStr += " ) "
 		}
 	}
-	utils.Dbg("createOneTable", lTable, sqlStr)
+	logger.Dbg("createOneTable", lTable, sqlStr)
 	_, err := self.Exec(sqlStr)
 	return err
 }

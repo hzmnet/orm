@@ -8,7 +8,8 @@ import (
 	"reflect"
 	"strconv"
 	"time"
-	"vectors/utils"
+	"webgo/logger"
+	"webgo/utils"
 )
 
 type (
@@ -274,7 +275,7 @@ func (self *TDataSet) NewRecord(Record map[string]interface{}) bool {
 			}
 
 			lValue, err = val2Str(&rawValue)
-			if utils.LogErr(err) {
+			if logger.LogErr(err) {
 				return false
 			}
 

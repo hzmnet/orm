@@ -2,7 +2,8 @@ package orm
 
 //	"reflect"
 import (
-	"vectors/utils"
+	"webgo/logger"
+	"webgo/utils"
 )
 
 var (
@@ -377,7 +378,7 @@ func (self *TField) _initOne2Many(arg ...string) { //comodel_name string, invers
 		self._type = "one2many" //TODO 剔除掉
 		self.Type = "one2many"
 	} else {
-		utils.Panic("One2Many field ", self.Name, "'s Args can no be blank!")
+		logger.Panic("One2Many field ", self.Name, "'s Args can no be blank!")
 	}
 }
 
@@ -388,7 +389,7 @@ func (self *TField) _initMany2One(arg ...string) { //comodel_name string
 		self._type = "many2one" //TODO 剔除掉
 		self.Type = "many2one"
 	} else {
-		utils.Panic("Many2One field ", self.Name, "'s Args can no be blank!")
+		logger.Panic("Many2One field ", self.Name, "'s Args can no be blank!")
 	}
 
 }
@@ -403,7 +404,7 @@ func (self *TField) _initMany2Many(arg ...string) { //comodel_name, relation, ke
 		self._type = "many2many" //TODO 剔除掉
 		self.Type = "many2many"
 	} else {
-		utils.Panic("Many2Many field ", self.Name, "'s Args can no be blank!")
+		logger.Panic("Many2Many field ", self.Name, "'s Args can no be blank!")
 	}
 
 }
@@ -420,7 +421,7 @@ func (self *TField) _initSelection(arg ...string) { //comodel_name, relation, ke
 		self._type = "many2many" //TODO 剔除掉
 		self.Type = "many2many"
 	} else {
-		utils.Panic("Many2Many field ", self.Name, "'s Args can no be blank!")
+		logger.Panic("Many2Many field ", self.Name, "'s Args can no be blank!")
 	}
 
 }
